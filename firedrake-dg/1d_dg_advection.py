@@ -9,9 +9,10 @@ import time
 
 if __name__ == "__main__":
 
-    N_cells = 1000
-    dt = 0.0001
+    N_cells = 10000
+    dt = 5e-7
     t_end = 1.0
+    visulisation = False
 
     mesh = PeriodicIntervalMesh(N_cells, 1.0)
 
@@ -35,10 +36,11 @@ if __name__ == "__main__":
     A = inner(phi, Dt(q)) * dx
     F = A - L
 
-    luparams = {"mat_type": "aij", "ksp_type": "preonly", "pc_type": "lu"}
+    #solver_parameters = {"mat_type": "aij", "ksp_type": "preonly", "pc_type": "lu"}
+    solver_parameters={'ksp_type': 'cg', 'pc_type': 'none'}
 
     # butcher_tableau = GaussLegendre(2)
-    
+
     # "Classic RK4"
     third = 1.0 / 3.0
     sixth = 1.0 / 6.0
@@ -66,12 +68,14 @@ if __name__ == "__main__":
     dt = Constant(dt)
     t = Constant(0.0)
 
-    stepper = TimeStepper(F, butcher_tableau, t, dt, q, bcs=[], solver_parameters=luparams)
-
-    solution_output = File("output/solution.pvd")
+    stepper = TimeStepper(F, butcher_tableau, t, dt, q, bcs=[], solver_parameters=solver_parameters)
+    if visulisation:
+        solution_output = File("output/solution.pvd")
 
     step = 0
-    solution_output.write(q)
+
+    if visulisation:
+        solution_output.write(q)
     t0 = time.time()
     while float(t) < t_end:
         if float(t) + float(dt) > t_end:
@@ -79,14 +83,16 @@ if __name__ == "__main__":
         stepper.advance()
         t.assign(float(t) + float(dt))
         step += 1
-        if step % 100 == 0:
+        if step % 10 == 0:
             print(
                 "Step {}. Simulation time (s): {}. Time per step (s) {}".format(
                     step, float(t), (time.time() - t0) / step
                 )
             )
-            solution_output.write(q)
+            if visulisation:
+                solution_output.write(q)
 
-    solution_output.write(q)
+    if visulisation:
+        solution_output.write(q)
 
     print(norm(q - q_init) / norm(q_init))
