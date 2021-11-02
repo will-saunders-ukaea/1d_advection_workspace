@@ -1,32 +1,35 @@
 from firedrake import *
-from irksome import GaussLegendre, Dt, TimeStepper
-
-import irksome
-
-ButcherTableau = irksome.ButcherTableaux.ButcherTableau
 import time
 
 
 if __name__ == "__main__":
 
-    N_cells = 1000
-    dt = 5E-5
-    t_end = 1E-0
+    N_cells = 100000
+    dt = 5E-7
+    t_end = 5E-3
     visulisation = False
+    
 
+    # create the mesh and function space
     mesh = PeriodicIntervalMesh(N_cells, 1.0)
-
+    
+    # function space for q
     V = FunctionSpace(mesh, "DG", 1)
+
+    # function space for the constant velocity field
     W = VectorFunctionSpace(mesh, "CG", 1)
 
     (x,) = SpatialCoordinate(mesh)
 
     velocity = as_vector((1.0,))
     u = Function(W).interpolate(velocity)
-
+    
+    # initial condition to be advected
     q = Function(V).interpolate(exp(-20.0 * (x - 0.5) ** 2))
     q_init = Function(V).assign(q)
+    
 
+    # create the weak forms for "classic rk4"
     phi = TestFunction(V)
 
     n = FacetNormal(mesh)
@@ -48,7 +51,6 @@ if __name__ == "__main__":
     k2 = Function(V)
     k3 = Function(V)
     k4 = Function(V)
-
 
     #solver_parameters = {"mat_type": "aij", "ksp_type": "preonly", "pc_type": "lu"}
     solver_parameters={'ksp_type': 'cg', 'pc_type': 'none'}
